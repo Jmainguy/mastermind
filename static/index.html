@@ -10,30 +10,26 @@
   <body class="bg-gray-100 text-gray-900">
     <div class="max-w-3xl mx-auto p-6">
       <h1 class="text-3xl font-bold mb-4 text-center">Mastermind</h1>
-
-      <div class="mb-6">
-        <div class="text-sm text-center text-gray-600">Controls moved to Rules (bottom). Tap the palette to pick colors.</div>
-      </div>
-
+      
       <div id="gameArea" class="bg-white p-4 rounded shadow hidden">
-        <div id="board" class="space-y-1 max-h-[calc(100vh-220px)] sm:max-h-[55vh] overflow-auto touch-auto pb-28 sm:pb-0"></div>
+        <div id="board" class="space-y-1 max-h-[calc(100vh-220px)] sm:max-h-[55vh] overflow-auto touch-auto pb-28 sm:pb-24"></div>
 
-        <div id="controls" class="mt-4">
-          <div class="flex items-center justify-between">
-            <div class="text-sm">Select color then click target slot</div>
-            <div class="flex items-center">
-              <button id="guessBtn" class="ml-3 bg-green-600 text-white px-3 py-1 rounded">Guess</button>
-              <button id="undoBtn" class="ml-2 bg-yellow-300 text-gray-800 px-3 py-1 rounded">Undo</button>
+        <div id="controls" class="mt-4 pb-28">
+          <div id="palette" class="mt-4 fixed bottom-0 left-0 right-0 bg-white/90 border-t backdrop-blur-sm px-3 py-3">
+            <!-- colors are centered and actions always stack below them -->
+            <div class="flex flex-col items-center">
+              <div id="paletteColors" class="flex gap-2 overflow-x-auto touch-pan-x w-full justify-center">
+                <!-- palette buttons inserted here; horizontal scrolling on mobile. Fixed at bottom on small screens -->
+              </div>
+              <div id="paletteActions" class="flex items-center gap-2 justify-center w-full mt-2">
+                <button id="guessBtn" class="bg-green-600 text-white px-3 py-1 rounded">Guess</button>
+                <button id="undoBtn" class="bg-yellow-300 text-gray-800 px-3 py-1 rounded">Undo</button>
+              </div>
             </div>
-          </div>
-          <div id="palette" class="mt-4 sm:mt-4 flex gap-2 overflow-x-auto touch-pan-x py-2 sm:py-0 sm:static fixed bottom-0 left-0 right-0 bg-white/90 border-t backdrop-blur-sm px-3 sm:px-0">
-            <!-- palette buttons inserted here; horizontal scrolling on mobile. Fixed at bottom on small screens -->
           </div>
           <details class="mt-2 sm:mt-4 bg-gray-50 p-2 rounded text-sm">
             <summary class="font-medium">Rules & New Game</summary>
             <div class="mt-2">
-              <div class="mb-2 text-sm text-gray-600" id="status">Attempts left:</div>
-              <div class="mb-2 text-sm">Code length: <span id="showCodeLength"></span> • Colors: <span id="showColors"></span></div>
               <div class="grid grid-cols-2 gap-2">
               <label>Code Length<input id="codeLength" type="number" min="2" max="8" value="4" class="border rounded px-2 py-1 w-full" /></label>
               <label>Colors<input id="colors" type="number" min="2" max="10" value="6" class="border rounded px-2 py-1 w-full" /></label>

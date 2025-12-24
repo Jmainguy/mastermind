@@ -48,9 +48,6 @@
 
     renderBoard(); renderPalette();
     const gameArea = $('gameArea'); if(gameArea) gameArea.classList.remove('hidden');
-    safeText($('showCodeLength'), codeLength);
-    safeText($('showColors'), colors);
-    safeText($('status'), `Attempts left: ${data.attemptsLeft}`);
     // ensure board is scrolled to the top (first row) on new game
     setTimeout(()=> scrollToCurrentRow(), 50);
   }
@@ -127,7 +124,12 @@
   }
 
   function renderPalette(){
-    const pal = $('palette'); if(!pal) return; clearChildren(pal);
+    const palWrap = $('palette'); if(!palWrap) return;
+    const pal = $('paletteColors'); if(!pal) return; clearChildren(pal);
+    // add small spacers to allow centering when items don't overflow
+    const startSpacer = document.createElement('div'); startSpacer.className = 'w-3 flex-shrink-0';
+    const endSpacer = document.createElement('div'); endSpacer.className = 'w-3 flex-shrink-0';
+    pal.appendChild(startSpacer);
     const paletteCount = Math.min(colors, 10);
     for(let i=0;i<paletteCount;i++){
       const b = document.createElement('button');
@@ -140,12 +142,23 @@
         const target = slotElems[currentRow] && slotElems[currentRow][placeIndex]; if(target) target.style.backgroundColor = colorHexes[i] || '';
         nextFillIndex = Math.min(codeLength, placeIndex + 1);
         selectedColor = i;
-        // visual selection
+        // visual selection: clear selection rings from other palette buttons
         Array.from(pal.children).forEach(ch => ch.classList.remove('ring-4','ring-offset-2','ring-blue-300'));
         b.classList.add('ring-4','ring-offset-2','ring-blue-300');
       });
       pal.appendChild(b);
     }
+    pal.appendChild(endSpacer);
+    // if palette content is narrower than container, center it
+    setTimeout(()=>{
+      try{
+        if(pal.scrollWidth <= pal.clientWidth){
+          pal.style.justifyContent = 'center';
+        } else {
+          pal.style.justifyContent = '';
+        }
+      }catch(e){}
+    }, 30);
   }
 
   // ---------- Handlers ----------
