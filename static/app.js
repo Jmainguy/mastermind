@@ -25,10 +25,11 @@
 
   // ---------- Server API ----------
   async function startNewGame(){
-    codeLength = parseInt($('codeLength')?.value || 4, 10) || 4;
+    // if the inputs were removed from DOM, fall back to defaults
+    codeLength = parseInt($('codeLength')?.value || codeLength || 4, 10) || 4;
     // cap colors to 10 maximum to avoid missing hex entries
-    colors = Math.min(10, parseInt($('colors')?.value || 6, 10) || 6);
-    const attempts = parseInt($('attempts')?.value || 10, 10) || 10;
+    colors = Math.min(10, parseInt($('colors')?.value || colors || 6, 10) || 6);
+    const attempts = parseInt($('attempts')?.value || attemptsMax || 10, 10) || 10;
 
     const res = await fetch('/api/new', {
       method: 'POST',
@@ -126,16 +127,42 @@
   function renderPalette(){
     const palWrap = $('palette'); if(!palWrap) return;
     const pal = $('paletteColors'); if(!pal) return; clearChildren(pal);
-    // add small spacers to allow centering when items don't overflow
-    const startSpacer = document.createElement('div'); startSpacer.className = 'w-3 flex-shrink-0';
-    const endSpacer = document.createElement('div'); endSpacer.className = 'w-3 flex-shrink-0';
-    pal.appendChild(startSpacer);
+    // ensure palette sits above transient overlays (confetti/celebrate) so desktop clicks reach buttons
+    try{ palWrap.style.position = 'relative'; palWrap.style.zIndex = '20'; pal.style.position = 'relative'; pal.style.zIndex = '20'; palWrap.style.pointerEvents = 'auto'; }catch(e){}
     const paletteCount = Math.min(colors, 10);
     for(let i=0;i<paletteCount;i++){
+      const bWrap = document.createElement('div'); bWrap.className = 'flex items-center justify-center';
+      bWrap.style.pointerEvents = 'auto'; bWrap.style.zIndex = '1';
       const b = document.createElement('button');
-      // responsive button sizes: slightly smaller on very small screens
+      b.type = 'button';
       b.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-full border flex-shrink-0'; b.dataset.value = i; b.style.backgroundColor = colorHexes[i] || '';
-      b.addEventListener('click', ()=>{
+      b.style.cursor = 'pointer'; b.style.pointerEvents = 'auto'; b.style.zIndex = '2'; b.tabIndex = 0;
+      // per-button handler to guarantee clicks register on all platforms (defensive)
+      b.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const idx = parseInt(b.dataset.value, 10);
+        if(Number.isNaN(idx)) return;
+        if(currentRow >= attemptsMax) return;
+        const placeIndex = nextFillIndex < codeLength ? nextFillIndex : codeLength - 1;
+        boardState[currentRow][placeIndex] = idx;
+        const target = slotElems[currentRow] && slotElems[currentRow][placeIndex]; if(target) target.style.backgroundColor = colorHexes[idx] || '';
+        nextFillIndex = Math.min(codeLength, placeIndex + 1);
+        selectedColor = idx;
+        const palButtons = document.querySelectorAll('#paletteColors button'); if(palButtons) Array.from(palButtons).forEach(ch=>ch.classList.remove('ring-4','ring-offset-2','ring-blue-300'));
+        b.classList.add('ring-4','ring-offset-2','ring-blue-300');
+      });
+      bWrap.appendChild(b);
+      // make the wrapper clickable across its area
+      bWrap.addEventListener('click', (e) => { if (e.target === bWrap) { b.click(); } });
+      bWrap.style.cursor = 'pointer';
+      pal.appendChild(bWrap);
+    }
+    // install a single delegated click handler so clicks reliably work on all platforms
+    if(!pal.__delegationInstalled){
+      pal.addEventListener('click', (e)=>{
+        const btn = e.target.closest('button'); if(!btn || !pal.contains(btn)) return;
+        const i = parseInt(btn.dataset.value, 10);
+        if(Number.isNaN(i)) return;
         if(currentRow >= attemptsMax) return;
         const placeIndex = nextFillIndex < codeLength ? nextFillIndex : codeLength - 1;
         boardState[currentRow][placeIndex] = i;
@@ -143,22 +170,42 @@
         nextFillIndex = Math.min(codeLength, placeIndex + 1);
         selectedColor = i;
         // visual selection: clear selection rings from other palette buttons
-        Array.from(pal.children).forEach(ch => ch.classList.remove('ring-4','ring-offset-2','ring-blue-300'));
-        b.classList.add('ring-4','ring-offset-2','ring-blue-300');
+        const palButtons = document.querySelectorAll('#paletteColors button'); if(palButtons) Array.from(palButtons).forEach(ch=>ch.classList.remove('ring-4','ring-offset-2','ring-blue-300'));
+        btn.classList.add('ring-4','ring-offset-2','ring-blue-300');
       });
-      pal.appendChild(b);
+      pal.__delegationInstalled = true;
     }
-    pal.appendChild(endSpacer);
-    // if palette content is narrower than container, center it
-    setTimeout(()=>{
-      try{
-        if(pal.scrollWidth <= pal.clientWidth){
-          pal.style.justifyContent = 'center';
-        } else {
-          pal.style.justifyContent = '';
-        }
-      }catch(e){}
-    }, 30);
+
+    // On non-touch / fine-pointer devices (desktop), remove touch scroller behavior
+    try{
+      const isDesktop = !('ontouchstart' in window) && window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+      if(isDesktop){
+        pal.classList.remove('overflow-x-auto');
+        pal.classList.remove('touch-pan-x');
+        pal.style.overflowX = 'visible';
+        // ensure wrappers are inline so hit areas align
+        Array.from(pal.children).forEach(c=>{ c.style.display = 'inline-flex'; c.style.margin = '0 6px'; });
+      }
+    }catch(e){}
+
+    // Focus the first button briefly to ensure desktop browsers activate it for pointer events
+    try{ const first = pal.querySelector('button'); if(first){ first.focus(); setTimeout(()=> first.blur(), 40); } }catch(e){}
+
+    // Optional debug mode: open the page with ?debug=palette to log pointer events and highlight targets
+    try{
+      if(window.location && window.location.search && window.location.search.indexOf('debug=palette') !== -1){
+        console.log('Palette debug mode ON');
+        const dbg = document.createElement('div'); dbg.id = 'paletteDbg'; dbg.style.position='fixed'; dbg.style.pointerEvents='none'; dbg.style.border='2px dashed red'; dbg.style.zIndex='99999'; dbg.style.background='rgba(255,0,0,0.02)'; document.body.appendChild(dbg);
+        window.addEventListener('pointermove', (e)=>{
+          const el = document.elementFromPoint(e.clientX, e.clientY);
+          if(!el) return; const r = el.getBoundingClientRect(); dbg.style.left = r.left+'px'; dbg.style.top = r.top+'px'; dbg.style.width = r.width+'px'; dbg.style.height = r.height+'px';
+        });
+        window.addEventListener('pointerdown', (e)=>{
+          const el = document.elementFromPoint(e.clientX, e.clientY);
+          console.log('pointerdown target:', el, 'closest button:', el && el.closest ? el.closest('button') : null);
+        }, {capture:true});
+      }
+    }catch(e){}
   }
 
   // ---------- Handlers ----------
@@ -190,7 +237,7 @@
         nextFillIndex = 0; selectedColor = null;
         if(rowElems[prev]) rowElems[prev].classList.remove('bg-blue-50','ring-1','ring-blue-200');
         if(rowElems[currentRow]) rowElems[currentRow].classList.add('bg-blue-50','ring-1','ring-blue-200');
-        const pal = $('palette'); if(pal) Array.from(pal.children).forEach(ch=>ch.classList.remove('ring-4','ring-offset-2','ring-blue-300'));
+        const palButtons = document.querySelectorAll('#paletteColors button'); if(palButtons) Array.from(palButtons).forEach(ch=>ch.classList.remove('ring-4','ring-offset-2','ring-blue-300'));
         setTimeout(()=> scrollToCurrentRow(), 40);
       }
     } catch(e){ console.error('guess failed', e); alert('Network error during guess'); }
@@ -207,22 +254,24 @@
 
   function showLoss(secret){
     const cele = $('celebrate'); if(!cele) return;
+    try{ cele.style.zIndex = 60; cele.style.pointerEvents = 'auto'; }catch(e){}
     // ensure overlay text is always populated (fixes missing text on second playthrough)
     const titleEl = $('celeTitle'); const msgEl = $('celeMessage');
     safeText(titleEl, 'You Lost');
     safeText(msgEl, 'Good try — here is the code. Have another go!');
     const secretDiv = $('celeSecret'); if(secretDiv) { secretDiv.innerHTML = ''; if(Array.isArray(secret)){ secret.forEach(v=>{ const dot = document.createElement('div'); dot.className='inline-block w-6 h-6 rounded-full mr-2 border'; dot.style.backgroundColor = colorHexes[v] || '#e5e7eb'; secretDiv.appendChild(dot); }); } }
-    cele.classList.remove('opacity-0'); cele.classList.add('opacity-100'); cele.style.pointerEvents='auto'; cele.style.display='flex';
+    cele.style.display = 'flex'; cele.classList.remove('opacity-0'); cele.classList.add('opacity-100');
     runConfetti(80,'#9ca3af');
   }
 
   function celebrate(secret){
     const cele = $('celebrate'); if(!cele) return;
+    try{ cele.style.zIndex = 60; cele.style.pointerEvents = 'auto'; }catch(e){}
     // ensure text is present every time we show the overlay
     safeText($('celeTitle'), 'You Won!');
     safeText($('celeMessage'), 'Nice job — the code has been cracked.');
     const secretDiv = $('celeSecret'); if(secretDiv){ secretDiv.innerHTML = ''; if(Array.isArray(secret) && secret.length){ secret.forEach(v=>{ const dot = document.createElement('div'); dot.className='inline-block w-6 h-6 rounded-full mr-2 border'; dot.style.backgroundColor = colorHexes[v] || '#e5e7eb'; secretDiv.appendChild(dot); }); } }
-    cele.classList.remove('opacity-0'); cele.classList.add('opacity-100'); cele.style.pointerEvents='auto'; cele.style.display='flex';
+    cele.style.display = 'flex'; cele.classList.remove('opacity-0'); cele.classList.add('opacity-100');
     runConfetti(150);
     try{ playHappyMelody(); }catch(e){ /* ignore audio errors */ }
   }
@@ -288,8 +337,81 @@
     const undoBtn = $('undoBtn'); if(undoBtn) undoBtn.addEventListener('click', undoHandler);
     const playAgainBtn = $('playAgain'); if(playAgainBtn) playAgainBtn.addEventListener('click', ()=> hideOverlayAndStartNew());
 
-    // small auto-start after DOM ready to ensure elements exist
-    setTimeout(()=>{ const nb = $('newBtn'); if(nb) nb.click(); }, 100);
+    // auto-start a new game
+    setTimeout(()=>{ startNewGame(); }, 80);
+    setupSettings();
+    // Keyboard shortcuts: 1..9 select palette colors, 0 selects color 10 when available
+    document.addEventListener('keydown', (e)=>{
+      try{
+        const tgt = e.target; if(tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+        const k = e.key;
+        let idx = -1;
+        if(/^[1-9]$/.test(k)) idx = parseInt(k,10)-1;
+        else if(k === '0' && colors >= 10) idx = 9;
+        if(idx >= 0 && idx < colors){
+          const btn = document.querySelector(`#paletteColors button[data-value="${idx}"]`);
+          if(btn) { btn.focus(); btn.click(); e.preventDefault(); }
+        }
+      }catch(err){/* ignore */}
+    });
+  }
+
+  // -------- Settings modal & hint banner --------
+  function showSettings(){ const m = $('settingsModal'); if(m) m.classList.remove('hidden'); }
+  function showSettings(){ const m = $('settingsModal'); if(m){ m.classList.remove('hidden'); m.classList.add('flex'); m.style.alignItems='center'; m.style.justifyContent='center'; m.style.zIndex = '9999'; } }
+  function hideSettings(){ const m = $('settingsModal'); if(m){ m.classList.add('hidden'); m.classList.remove('flex'); m.style.zIndex = ''; } }
+
+  function setupSettings(){
+    const sb = $('settingsBtn'); if(sb) sb.addEventListener('click', ()=>{ // populate modal with current values
+      const ml = $('modalCodeLength'); const mc = $('modalColors'); const ma = $('modalAttempts');
+      if(ml) ml.value = codeLength; if(mc) mc.value = colors; if(ma) ma.value = attemptsMax;
+      showSettings();
+      // focus and select the first input to open keyboard on mobile (after render)
+      setTimeout(()=>{ if(ml){ try{ ml.focus(); ml.select(); }catch(e){} } }, 120);
+    });
+    const cancel = $('cancelSettings'); if(cancel) cancel.addEventListener('click', hideSettings);
+    const apply = $('applySettings'); if(apply) apply.addEventListener('click', ()=>{
+      const ml = parseInt($('modalCodeLength')?.value||codeLength,10)||codeLength;
+      const mc = Math.min(10, parseInt($('modalColors')?.value||colors,10)||colors);
+      const ma = parseInt($('modalAttempts')?.value||attemptsMax,10)||attemptsMax;
+      codeLength = ml; colors = mc; attemptsMax = ma;
+      hideSettings(); startNewGame();
+    });
+    // close modal when clicking outside content (on the overlay)
+    const modal = $('settingsModal');
+    if(modal){
+      modal.addEventListener('click', (e)=>{
+        if(e.target === modal) hideSettings();
+      });
+    }
+    // delegated fallback for buttons (ensures handlers work even if elements weren't found earlier)
+    document.addEventListener('click', (e)=>{
+      const t = e.target;
+      if(!t) return;
+      if(t.id === 'cancelSettings') hideSettings();
+      if(t.id === 'applySettings'){
+        const ml = parseInt($('modalCodeLength')?.value||codeLength,10)||codeLength;
+        const mc = Math.min(10, parseInt($('modalColors')?.value||colors,10)||colors);
+        const ma = parseInt($('modalAttempts')?.value||attemptsMax,10)||attemptsMax;
+        codeLength = ml; colors = mc; attemptsMax = ma;
+        hideSettings(); startNewGame();
+      }
+    });
+    // close modal on Escape key
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){
+        const m = $('settingsModal'); if(m && !m.classList.contains('hidden')) hideSettings();
+      }
+    });
+    // one-time hint banner
+    const hintKey = 'mm_hint_shown_v1';
+    if(!localStorage.getItem(hintKey)){
+      const b = document.createElement('div'); b.id='mmHint'; b.className='fixed top-6 left-1/2 -translate-x-1/2 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 px-4 py-2 rounded shadow';
+      b.textContent = 'Controls: tap a color, then tap a slot. Guess and Undo are below the colors.';
+      document.body.appendChild(b);
+      setTimeout(()=>{ b.style.transition='opacity 0.4s'; b.style.opacity='0'; setTimeout(()=> b.remove(), 2000); }, 4000);
+      localStorage.setItem(hintKey, '1');
+    }
   }
 
   window.addEventListener('DOMContentLoaded', setup);

@@ -9,42 +9,47 @@
   </head>
   <body class="bg-gray-100 text-gray-900">
     <div class="max-w-3xl mx-auto p-6">
-      <h1 class="text-3xl font-bold mb-4 text-center">Mastermind</h1>
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-3xl font-bold text-center flex-1">Mastermind</h1>
+        <button id="settingsBtn" class="ml-4 p-2 rounded-full hover:bg-gray-200" aria-label="Settings">⚙️</button>
+      </div>
       
       <div id="gameArea" class="bg-white p-4 rounded shadow hidden">
-        <div id="board" class="space-y-1 max-h-[calc(100vh-220px)] sm:max-h-[55vh] overflow-auto touch-auto pb-28 sm:pb-24"></div>
+        <div id="board" class="space-y-1 max-h-[calc(100vh-220px)] sm:max-h-[55vh] overflow-auto touch-auto"></div>
 
-        <div id="controls" class="mt-4 pb-28">
-          <div id="palette" class="mt-4 fixed bottom-0 left-0 right-0 bg-white/90 border-t backdrop-blur-sm px-3 py-3">
-            <!-- colors are centered and actions always stack below them -->
+        <div id="controls" class="mt-4">
+          <div id="palette" class="mt-4 bg-white/0 px-0 py-0">
+            <!-- colors are stacked vertically now -->
             <div class="flex flex-col items-center">
-              <div id="paletteColors" class="flex gap-2 overflow-x-auto touch-pan-x w-full justify-center">
-                <!-- palette buttons inserted here; horizontal scrolling on mobile. Fixed at bottom on small screens -->
+              <div id="paletteColors" class="flex gap-2 w-full justify-center flex-wrap">
+                <!-- palette buttons inserted here; wrapping palette to avoid desktop scrollbars -->
               </div>
-              <div id="paletteActions" class="flex items-center gap-2 justify-center w-full mt-2">
+              <div id="paletteActions" class="flex items-center gap-2 justify-center w-full mt-3">
                 <button id="guessBtn" class="bg-green-600 text-white px-3 py-1 rounded">Guess</button>
                 <button id="undoBtn" class="bg-yellow-300 text-gray-800 px-3 py-1 rounded">Undo</button>
               </div>
             </div>
           </div>
-          <details class="mt-2 sm:mt-4 bg-gray-50 p-2 rounded text-sm">
-            <summary class="font-medium">Rules & New Game</summary>
-            <div class="mt-2">
-              <div class="grid grid-cols-2 gap-2">
-              <label>Code Length<input id="codeLength" type="number" min="2" max="8" value="4" class="border rounded px-2 py-1 w-full" /></label>
-              <label>Colors<input id="colors" type="number" min="2" max="10" value="6" class="border rounded px-2 py-1 w-full" /></label>
-              <label>Attempts<input id="attempts" type="number" min="1" max="20" value="10" class="border rounded px-2 py-1 w-full" /></label>
-              <div class="flex items-center"><button id="newBtn" class="bg-blue-600 text-white px-3 py-1 rounded w-full">New Game</button></div>
-              </div>
-            </div>
-          </details>
         </div>
       </div>
     </div>
 
     <script src="/static/app.js"></script>
-    <div id="celebrate" class="fixed inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity">
-      <div id="confetti" class="absolute inset-0"></div>
+    <!-- Settings modal -->
+    <div id="settingsModal" class="fixed inset-0 hidden items-center justify-center bg-black/40">
+      <div class="bg-white rounded p-4 w-80">
+        <h3 class="font-semibold mb-2">Game Settings</h3>
+        <label class="block mb-2">Code Length <input id="modalCodeLength" type="text" inputmode="numeric" pattern="[0-9]*" value="4" class="border rounded px-2 py-1 w-full"/></label>
+        <label class="block mb-2">Colors <input id="modalColors" type="text" inputmode="numeric" pattern="[0-9]*" value="6" class="border rounded px-2 py-1 w-full"/></label>
+        <label class="block mb-4">Attempts <input id="modalAttempts" type="text" inputmode="numeric" pattern="[0-9]*" value="10" class="border rounded px-2 py-1 w-full"/></label>
+        <div class="flex gap-2 justify-end">
+          <button id="cancelSettings" class="px-3 py-1 rounded">Cancel</button>
+          <button id="applySettings" class="bg-blue-600 text-white px-3 py-1 rounded">New Game</button>
+        </div>
+      </div>
+    </div>
+    <div id="celebrate" class="fixed inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity" style="z-index:50; display:none;">
+      <div id="confetti" class="absolute inset-0" style="pointer-events:none;"></div>
       <div id="celebox" class="z-10 pointer-events-auto bg-white/80 backdrop-blur-md rounded-lg p-6 shadow-xl text-center">
         <h2 id="celeTitle" class="text-2xl font-bold mb-2">You Won!</h2>
         <p id="celeMessage" class="mb-4">Nice job — the code has been cracked.</p>

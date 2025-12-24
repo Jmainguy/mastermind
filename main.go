@@ -85,7 +85,11 @@ func main() {
 			}
 			p = "index.html"
 		}
-		defer f.Close()
+		defer func() {
+			if err := f.Close(); err != nil {
+				log.Printf("warning: failed to close file %s: %v", p, err)
+			}
+		}()
 		http.ServeContent(w, r, p, time.Time{}, f)
 	})
 
@@ -134,7 +138,11 @@ func handleNewGame(w http.ResponseWriter, r *http.Request) {
 
 	resp := NewGameResponse{ID: id, Game: *g}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Printf("error encoding new game response: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func handleGuess(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +183,11 @@ func handleGuess(w http.ResponseWriter, r *http.Request) {
 		resp.Secret = g.Secret
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Printf("error encoding guess response: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func randID(n int) string {
