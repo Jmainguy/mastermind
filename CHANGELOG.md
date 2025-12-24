@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/Jmainguy/mastermind/compare/v1.0.2...v1.0.3) (2025-12-24)
+
+
+### Bug Fixes
+
+* optmizie buttons for mobile ([c806098](https://github.com/Jmainguy/mastermind/commit/c80609805cd448aae2e68ed60bc1ef02138b5991))
+
 ## [1.0.2](https://github.com/Jmainguy/mastermind/compare/v1.0.1...v1.0.2) (2025-12-24)
 
 
