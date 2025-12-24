@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/Jmainguy/mastermind/compare/v1.0.1...v1.0.2) (2025-12-24)
+
+
+### Bug Fixes
+
+* optimize for small screen ([2832419](https://github.com/Jmainguy/mastermind/commit/2832419e8b9f7aeca617c7e374e6c4796c24cdf7))
+
 ## [1.0.1](https://github.com/Jmainguy/mastermind/compare/v1.0.0...v1.0.1) (2025-12-24)
 
 
