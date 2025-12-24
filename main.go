@@ -92,7 +92,7 @@ func main() {
 	http.HandleFunc("/api/new", handleNewGame)
 	http.HandleFunc("/api/guess", handleGuess)
 
-	addr := ":8080"
+	addr := "0.0.0.0:8080"
 	log.Printf("starting server on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
