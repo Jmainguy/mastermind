@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mastermind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  </head>
+  <body class="bg-gray-100 text-gray-900">
+    <div class="max-w-3xl mx-auto p-6">
+      <h1 class="text-3xl font-bold mb-4 text-center">Mastermind</h1>
+
+      <div class="mb-6">
+        <div class="text-sm text-center text-gray-600">Controls moved to Rules (bottom). Tap the palette to pick colors.</div>
+      </div>
+
+      <div id="gameArea" class="bg-white p-4 rounded shadow hidden">
+        <div id="board" class="space-y-1 max-h-[calc(100vh-220px)] sm:max-h-[55vh] overflow-auto touch-auto pb-28 sm:pb-0"></div>
+
+        <div id="controls" class="mt-4">
+          <div class="flex items-center justify-between">
+            <div class="text-sm">Select color then click target slot</div>
+            <div class="flex items-center">
+              <button id="guessBtn" class="ml-3 bg-green-600 text-white px-3 py-1 rounded">Guess</button>
+              <button id="undoBtn" class="ml-2 bg-yellow-300 text-gray-800 px-3 py-1 rounded">Undo</button>
+            </div>
+          </div>
+          <div id="palette" class="mt-4 sm:mt-4 flex gap-2 overflow-x-auto touch-pan-x py-2 sm:py-0 sm:static fixed bottom-0 left-0 right-0 bg-white/90 border-t backdrop-blur-sm px-3 sm:px-0">
+            <!-- palette buttons inserted here; horizontal scrolling on mobile. Fixed at bottom on small screens -->
+          </div>
+          <details class="mt-2 sm:mt-4 bg-gray-50 p-2 rounded text-sm">
+            <summary class="font-medium">Rules & New Game</summary>
+            <div class="mt-2">
+              <div class="mb-2 text-sm text-gray-600" id="status">Attempts left:</div>
+              <div class="mb-2 text-sm">Code length: <span id="showCodeLength"></span> • Colors: <span id="showColors"></span></div>
+              <div class="grid grid-cols-2 gap-2">
+              <label>Code Length<input id="codeLength" type="number" min="2" max="8" value="4" class="border rounded px-2 py-1 w-full" /></label>
+              <label>Colors<input id="colors" type="number" min="2" max="10" value="6" class="border rounded px-2 py-1 w-full" /></label>
+              <label>Attempts<input id="attempts" type="number" min="1" max="20" value="10" class="border rounded px-2 py-1 w-full" /></label>
+              <div class="flex items-center"><button id="newBtn" class="bg-blue-600 text-white px-3 py-1 rounded w-full">New Game</button></div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+    <div id="celebrate" class="fixed inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity">
+      <div id="confetti" class="absolute inset-0"></div>
+      <div id="celebox" class="z-10 pointer-events-auto bg-white/80 backdrop-blur-md rounded-lg p-6 shadow-xl text-center">
+        <h2 id="celeTitle" class="text-2xl font-bold mb-2">You Won!</h2>
+        <p id="celeMessage" class="mb-4">Nice job — the code has been cracked.</p>
+        <div id="celeSecret" class="mb-3 text-sm text-gray-700"></div>
+        <div class="flex justify-center gap-2">
+          <button id="playAgain" class="bg-blue-600 text-white px-3 py-1 rounded">Play Again</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
