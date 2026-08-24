@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/Jmainguy/mastermind/compare/v1.0.3...v1.0.4) (2026-08-24)
+
+
+### Bug Fixes
+
+* **release:** secure and sign OCI image publishing ([589c609](https://github.com/Jmainguy/mastermind/commit/589c609c2996707b833890622b1150b99800ac8e))
+
 ## [1.0.3](https://github.com/Jmainguy/mastermind/compare/v1.0.2...v1.0.3) (2025-12-24)
 
 
